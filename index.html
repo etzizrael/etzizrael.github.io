@@ -25,6 +25,101 @@
             padding: 0 20px;
         }
 
+        /* Login Screen Styles */
+        .login-screen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 10001;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-screen.active {
+            display: flex;
+        }
+
+        .login-box {
+            background: white;
+            padding: 50px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .login-box h2 {
+            color: #d946aa;
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+
+        .login-box p {
+            color: #718096;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+
+        .login-form input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            font-family: inherit;
+        }
+
+        .login-form input:focus {
+            outline: none;
+            border-color: #d946aa;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #d946aa 0%, #a78bfa 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(217, 70, 170, 0.4);
+        }
+
+        .login-error {
+            color: #ef4444;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .login-error.show {
+            display: block;
+        }
+
+        .cancel-login {
+            margin-top: 15px;
+            color: #718096;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .cancel-login:hover {
+            color: #d946aa;
+        }
+
         /* Admin Panel Styles */
         .admin-panel {
             display: none;
@@ -603,6 +698,32 @@
     </style>
 </head>
 <body>
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-box">
+            <h2>🔐 Admin Login</h2>
+            <p>Enter your credentials to access the admin panel</p>
+            <form class="login-form" onsubmit="handleLogin(event)">
+                <input 
+                    type="text" 
+                    id="username" 
+                    placeholder="Username" 
+                    required 
+                    autocomplete="off"
+                >
+                <input 
+                    type="password" 
+                    id="password" 
+                    placeholder="Password" 
+                    required
+                >
+                <button type="submit" class="login-btn">Login</button>
+                <div class="login-error" id="loginError">Invalid username or password!</div>
+            </form>
+            <p class="cancel-login" onclick="cancelLogin()">Cancel</p>
+        </div>
+    </div>
+
     <!-- Admin Panel (Hidden) -->
     <div class="admin-panel" id="adminPanel">
         <div class="admin-container">
@@ -653,7 +774,7 @@
     </div>
 
     <!-- Admin Hint (shows briefly) -->
-    <div class="admin-hint" id="adminHint">Press Ctrl + Shift + A to open Admin Panel</div>
+    <div class="admin-hint" id="adminHint">Admin: Ctrl+Shift+P or triple-click "IZRAEL" or add ?admin to URL</div>
 
     <!-- Hero Section -->
     <section class="hero">
@@ -780,16 +901,84 @@
     </footer>
 
     <script>
+        // ========================================
+        // CHANGE YOUR LOGIN CREDENTIALS HERE!
+        // ========================================
+        const ADMIN_USERNAME = "izrael";  // ← Change this to your username
+        const ADMIN_PASSWORD = “iz_RAEL?”;  // ← Change this to your password
+        // ========================================
+
         // Current tags being added
         let currentTags = [];
 
-        // Keyboard shortcut to open admin panel: Ctrl + Shift + A
-        document.addEventListener('keydown', function(e) {
-            if (e.ctrlKey && e.shiftKey && e.key === 'A') {
-                e.preventDefault();
+        // Login handling
+        function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+                // Successful login
+                document.getElementById('loginScreen').classList.remove('active');
                 document.getElementById('adminPanel').classList.add('active');
+                document.getElementById('loginError').classList.remove('show');
+                
+                // Store login session (valid for 24 hours)
+                sessionStorage.setItem('adminLoggedIn', 'true');
+                
+                // Clear form
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+            } else {
+                // Failed login
+                document.getElementById('loginError').classList.add('show');
+                document.getElementById('password').value = '';
+            }
+        }
+
+        function cancelLogin() {
+            document.getElementById('loginScreen').classList.remove('active');
+            document.getElementById('loginError').classList.remove('show');
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        }
+
+        function openAdminPanel() {
+            // Check if already logged in this session
+            if (sessionStorage.getItem('adminLoggedIn') === 'true') {
+                document.getElementById('adminPanel').classList.add('active');
+            } else {
+                document.getElementById('loginScreen').classList.add('active');
+            }
+        }
+
+        // Multiple ways to open admin panel
+        
+        // Method 1: Keyboard shortcut - Ctrl + Shift + P (for Panel)
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.shiftKey && e.key === 'P') {
+                e.preventDefault();
+                openAdminPanel();
             }
         });
+
+        // Method 2: Triple-click on the "IZRAEL" heading
+        let clickCount = 0;
+        let clickTimer = null;
+        document.querySelector('.hero h1').addEventListener('click', function() {
+            clickCount++;
+            if (clickCount === 3) {
+                openAdminPanel();
+                clickCount = 0;
+            }
+            clearTimeout(clickTimer);
+            clickTimer = setTimeout(() => { clickCount = 0; }, 1000);
+        });
+
+        // Method 3: URL parameter - add ?admin to URL
+        if (window.location.search.includes('admin')) {
+            openAdminPanel();
+        }
 
         // Show hint on page load
         window.addEventListener('load', function() {
@@ -908,57 +1097,3 @@
             
             grid.innerHTML = projects.map(project => `
                 <div class="project-
-                function loadAdminProjects() {
-        const projects = JSON.parse(localStorage.getItem('projects') || '[]');
-        const list = document.getElementById('adminProjectsList');
-        
-        if (projects.length === 0) {
-            list.innerHTML = '<p style="color: #718096; text-align: center;">No projects yet. Add your first one above!</p>';
-            return;
-        }
-        
-        list.innerHTML = projects.map((project, index) => `
-            <div class="project-item">
-                <h3>${project.name}</h3>
-                <p>${project.description}</p>
-                <div>
-                    ${project.tags.map(tag => `<span class="project-tag">${tag}</span>`).join('')}
-                </div>
-                ${project.link ? `<p style="margin-top: 10px; color: #718096; font-size: 0.9rem;">Link: ${project.link}</p>` : ''}
-                <div class="project-item-actions">
-                    <button class="edit-btn" onclick="editProject(${index})">Edit</button>
-                    <button class="delete-btn" onclick="deleteProject(${index})">Delete</button>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    function exportProjects() {
-        const projects = JSON.parse(localStorage.getItem('projects') || '[]');
-        const dataStr = JSON.stringify(projects, null, 2);
-        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-        
-        const exportFileDefaultName = 'izrael-projects.json';
-        
-        const linkElement = document.createElement('a');
-        linkElement.setAttribute('href', dataUri);
-        linkElement.setAttribute('download', exportFileDefaultName);
-        linkElement.click();
-        
-        alert('Projects exported! You can import this file later or use it to update your GitHub site.');
-    }
-
-    // Load projects on page load
-    window.addEventListener('load', function() {
-        loadProjects();
-        loadAdminProjects();
-    });
-
-    // Allow Enter key to add tags
-    document.getElementById('tagInput').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            addTag();
-        }
-    });
-</script>
